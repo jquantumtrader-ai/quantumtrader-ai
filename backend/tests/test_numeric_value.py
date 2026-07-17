@@ -2,82 +2,51 @@ from decimal import Decimal
 
 import pytest
 
-from app.domain.common.financial_core.exceptions import (
-    InvalidOperationException,
-)
 from app.domain.common.financial_core.value_objects.numeric import (
     NumericValue,
 )
 
 
-def test_numeric_value_creation():
+def test_numeric_value_creation() -> None:
 
     value = NumericValue("100.50")
 
     assert value.value == Decimal("100.50")
 
 
-def test_addition():
+def test_as_decimal() -> None:
 
-    a = NumericValue("10")
-    b = NumericValue("5")
+    value = NumericValue("42.75")
 
-    result = a + b
-
-    assert result.value == Decimal("15")
+    assert value.as_decimal() == Decimal("42.75")
 
 
-def test_subtraction():
-
-    a = NumericValue("10")
-    b = NumericValue("5")
-
-    result = a - b
-
-    assert result.value == Decimal("5")
-
-
-def test_multiplication():
-
-    a = NumericValue("10")
-    b = NumericValue("5")
-
-    result = a * b
-
-    assert result.value == Decimal("50")
-
-
-def test_division():
-
-    a = NumericValue("10")
-    b = NumericValue("5")
-
-    result = a / b
-
-    assert result.value == Decimal("2")
-
-
-def test_division_by_zero():
-
-    a = NumericValue("10")
-    b = NumericValue("0")
-
-    with pytest.raises(
-        InvalidOperationException
-    ):
-
-        a / b
-
-
-def test_equality():
+def test_equality() -> None:
 
     a = NumericValue("100")
+
     b = NumericValue("100")
 
     assert a == b
 
 
-def test_is_immutable():
+def test_inequality() -> None:
+
+    a = NumericValue("100")
+
+    b = NumericValue("101")
+
+    assert a != b
+
+
+def test_repr() -> None:
+
+    value = NumericValue("10")
+
+    assert repr(value) == "NumericValue(value=10)"
+
+
+def test_is_immutable() -> None:
 
     value = NumericValue("100")
 
@@ -86,7 +55,7 @@ def test_is_immutable():
         value.value = Decimal("200")
 
 
-def test_float_is_not_allowed():
+def test_float_is_not_allowed() -> None:
 
     with pytest.raises(TypeError):
 

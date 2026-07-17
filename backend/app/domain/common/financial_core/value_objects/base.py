@@ -1,26 +1,31 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
 from abc import ABC
+from dataclasses import asdict, dataclass
+from typing import Any
 
 
 @dataclass(
     frozen=True,
-    slots=True
+    slots=True,
 )
 class ValueObject(ABC):
     """
-    Classe base dos Value Objects.
+    Classe base para todos os Value Objects do domínio.
 
     Características:
 
     - Imutável
     - Hashável
     - Comparável
+    - Serializável
     """
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Converte o Value Object em um dicionário.
 
-        return {
-            key: value
-            for key, value
-            in self.__dict__.items()
-        }
+        Utiliza a serialização oficial do dataclass,
+        suportando objetos aninhados.
+        """
+        return asdict(self)
