@@ -18,6 +18,7 @@ class LargestRemainderAllocator(MoneyAllocator):
     - Mantém precisão financeira
     - Distribuição determinística
     - Conserva o valor total
+    - Respeita escala monetária
     """
 
     def allocate(
@@ -55,6 +56,7 @@ class LargestRemainderAllocator(MoneyAllocator):
             remainders,
         )
 
+
     def _calculate_proportional_values(
         self,
         money: Money,
@@ -71,6 +73,7 @@ class LargestRemainderAllocator(MoneyAllocator):
             for ratio in ratios
         ]
 
+
     def _calculate_base_values(
         self,
         values: list[Decimal],
@@ -83,6 +86,7 @@ class LargestRemainderAllocator(MoneyAllocator):
             )
             for value in values
         ]
+
 
     def _calculate_remainders(
         self,
@@ -100,6 +104,7 @@ class LargestRemainderAllocator(MoneyAllocator):
                 len(proportional)
             )
         ]
+
 
     def _distribute_remainder(
         self,
@@ -127,20 +132,21 @@ class LargestRemainderAllocator(MoneyAllocator):
 
         values = list(base_values)
 
-        index = 0
+        cents = int(
+            (
+                remaining
+                / increment
+            )
+        )
 
-        while remaining > Decimal("0"):
+        for index in range(cents):
 
-            target = ordered[index][0]
+            target = ordered[
+                index % len(ordered)
+            ][0]
 
             values[target] += increment
 
-            remaining -= increment
-
-            index += 1
-
-            if index >= len(ordered):
-                index = 0
 
         return [
             Money(

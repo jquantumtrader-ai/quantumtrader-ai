@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 from ..currency.currency import Currency
@@ -11,7 +12,15 @@ from .numeric import NumericValue
 class Money(FinancialValue):
     """
     Representa um valor monetário associado a uma moeda.
+
+    Regras:
+
+    - Possui moeda associada
+    - Usa precisão monetária
+    - Mantém operações seguras entre moedas iguais
     """
+
+    SCALE = Decimal("0.01")
 
     currency: Currency
 
