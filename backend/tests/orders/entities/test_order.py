@@ -7,6 +7,7 @@ from app.domain.common.financial_core.orders import OrderId
 from app.domain.common.financial_core.orders.entities import Order
 from app.domain.common.financial_core.orders.enums import (
     OrderSide,
+    OrderStatus,
     OrderType,
 )
 from app.domain.common.financial_core.portfolio.assets.asset import Asset
@@ -21,15 +22,15 @@ BRL = Currency(
 
 
 def create_order(
-    side: OrderSide = OrderSide.BUY,
-    order_type: OrderType = OrderType.MARKET,
+    status: OrderStatus = OrderStatus.CREATED,
 ) -> Order:
 
     return Order(
         order_id=OrderId.new(),
         asset=Asset("PETR4"),
-        side=side,
-        order_type=order_type,
+        side=OrderSide.BUY,
+        order_type=OrderType.MARKET,
+        status=status,
         quantity=Decimal("10"),
         price=Money("30.00", BRL),
     )
@@ -39,11 +40,11 @@ def test_create_order():
 
     order = create_order()
 
-    assert order.asset.symbol == "PETR4"
-
-    assert order.side == OrderSide.BUY
-
-    assert order.order_type == OrderType.MARKET
+    assert (
+        order.status
+        ==
+        OrderStatus.CREATED
+    )
 
 
 def test_notional():
@@ -57,78 +58,31 @@ def test_notional():
     )
 
 
-def test_buy_property():
+def test_filled_status():
 
     order = create_order(
-        side=OrderSide.BUY,
+        OrderStatus.FILLED,
     )
 
-    assert order.is_buy is True
-
-    assert order.is_sell is False
+    assert order.is_filled is True
 
 
-def test_sell_property():
+def test_cancelled_status():
 
     order = create_order(
-        side=OrderSide.SELL,
+        OrderStatus.CANCELLED,
     )
 
-    assert order.is_sell is True
-
-    assert order.is_buy is False
+    assert order.is_cancelled is True
 
 
-def test_market_order():
+def test_rejected_status():
 
     order = create_order(
-        order_type=OrderType.MARKET,
+        OrderStatus.REJECTED,
     )
 
-    assert (
-        order.order_type
-        ==
-        OrderType.MARKET
-    )
-
-
-def test_limit_order():
-
-    order = create_order(
-        order_type=OrderType.LIMIT,
-    )
-
-    assert (
-        order.order_type
-        ==
-        OrderType.LIMIT
-    )
-
-
-def test_stop_order():
-
-    order = create_order(
-        order_type=OrderType.STOP,
-    )
-
-    assert (
-        order.order_type
-        ==
-        OrderType.STOP
-    )
-
-
-def test_stop_limit_order():
-
-    order = create_order(
-        order_type=OrderType.STOP_LIMIT,
-    )
-
-    assert (
-        order.order_type
-        ==
-        OrderType.STOP_LIMIT
-    )
+    assert order.is_rejected is True
 
 
 def test_quantity_validation():
@@ -142,6 +96,7 @@ def test_quantity_validation():
             asset=Asset("PETR4"),
             side=OrderSide.BUY,
             order_type=OrderType.MARKET,
+            status=OrderStatus.CREATED,
             quantity=Decimal("0"),
             price=Money("30.00", BRL),
         )
