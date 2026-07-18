@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from ...portfolio.assets.asset import Asset
 from ...value_objects.money import Money
+from ..enums.order_side import OrderSide
 from ..order_id import OrderId
 
 
@@ -18,9 +19,12 @@ class Order:
 
     asset: Asset
 
+    side: OrderSide
+
     quantity: Decimal
 
     price: Money
+
 
     def __post_init__(
         self,
@@ -30,6 +34,7 @@ class Order:
             raise ValueError(
                 "Quantidade deve ser maior que zero."
             )
+
 
     @property
     def notional(
@@ -41,6 +46,29 @@ class Order:
 
         return Money(
             self.quantity
-            * self.price.value,
+            *
+            self.price.value,
             self.price.currency,
+        )
+
+
+    @property
+    def is_buy(
+        self,
+    ) -> bool:
+
+        return (
+            self.side
+            == OrderSide.BUY
+        )
+
+
+    @property
+    def is_sell(
+        self,
+    ) -> bool:
+
+        return (
+            self.side
+            == OrderSide.SELL
         )
