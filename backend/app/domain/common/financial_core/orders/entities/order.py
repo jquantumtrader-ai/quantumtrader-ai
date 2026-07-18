@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 
 from ...portfolio.assets.asset import Asset
@@ -10,6 +10,7 @@ from ..enums import (
     OrderStatus,
     OrderType,
 )
+from ..fills import Fill
 from ..order_id import OrderId
 from ..state import OrderStateTransition
 
@@ -19,7 +20,8 @@ from ..state import OrderStateTransition
 class Order:
     """
     Representa uma ordem financeira
-    dentro do domínio.
+    com ciclo de vida e controle
+    de execuções.
     """
 
 
@@ -37,11 +39,13 @@ class Order:
 
     price: Money
 
+    fills: tuple[Fill, ...] = field(
+        default_factory=tuple,
+    )
 
 
-    def __post_init__(
-        self,
-    ) -> None:
+
+    def __post_init__(self) -> None:
 
         if self.quantity <= Decimal("0"):
 
@@ -52,9 +56,7 @@ class Order:
 
 
     @property
-    def notional(
-        self,
-    ) -> Money:
+    def notional(self) -> Money:
 
         return Money(
             self.quantity
@@ -66,35 +68,31 @@ class Order:
 
 
     @property
-    def is_buy(
-        self,
-    ) -> bool:
+    def executed_quantity(self) -> Decimal:
 
-        return (
-            self.side
-            ==
-            OrderSide.BUY
+        return sum(
+            (
+                fill.quantity
+                for fill in self.fills
+            ),
+            Decimal("0"),
         )
 
 
 
     @property
-    def is_sell(
-        self,
-    ) -> bool:
+    def remaining_quantity(self) -> Decimal:
 
         return (
-            self.side
-            ==
-            OrderSide.SELL
+            self.quantity
+            -
+            self.executed_quantity
         )
 
 
 
     @property
-    def is_filled(
-        self,
-    ) -> bool:
+    def is_filled(self) -> bool:
 
         return (
             self.status
@@ -105,9 +103,7 @@ class Order:
 
 
     @property
-    def is_cancelled(
-        self,
-    ) -> bool:
+    def is_cancelled(self) -> bool:
 
         return (
             self.status
@@ -118,14 +114,112 @@ class Order:
 
 
     @property
-    def is_rejected(
-        self,
-    ) -> bool:
+    def is_rejected(self) -> bool:
 
         return (
             self.status
             ==
             OrderStatus.REJECTED
+        )
+
+
+
+    @property
+    def average_execution_price(
+        self,
+    ) -> Money | None:
+
+        if not self.fills:
+
+            return None
+
+
+        total_value = sum(
+            (
+                fill.value.value
+                for fill in self.fills
+            ),
+            Decimal("0"),
+        )
+
+
+        return Money(
+            total_value
+            /
+            self.executed_quantity,
+            self.price.currency,
+        )
+
+
+
+    def add_fill(
+        self,
+        fill: Fill,
+    ) -> Order:
+
+
+        if (
+            fill.order_id
+            !=
+            self.order_id
+        ):
+
+            raise ValueError(
+                "Fill pertence a outra ordem."
+            )
+
+
+        if (
+            self.executed_quantity
+            +
+            fill.quantity
+            >
+            self.quantity
+        ):
+
+            raise ValueError(
+                "Quantidade executada excede a ordem."
+            )
+
+
+        new_fills = (
+            *self.fills,
+            fill,
+        )
+
+
+        new_status = self.status
+
+
+        executed = sum(
+            (
+                item.quantity
+                for item in new_fills
+            ),
+            Decimal("0"),
+        )
+
+
+        if executed == self.quantity:
+
+            new_status = OrderStatus.FILLED
+
+
+        elif self.status == OrderStatus.SUBMITTED:
+
+            new_status = OrderStatus.PARTIALLY_FILLED
+
+
+
+        return Order(
+            order_id=self.order_id,
+            asset=self.asset,
+            side=self.side,
+            order_type=self.order_type,
+            status=new_status,
+            quantity=self.quantity,
+            price=self.price,
+            fills=new_fills,
         )
 
 
@@ -149,16 +243,12 @@ class Order:
             status=new_status,
             quantity=self.quantity,
             price=self.price,
+            fills=self.fills,
         )
 
 
 
-    def submit(
-        self,
-    ) -> Order:
-        """
-        Envia ordem para execução.
-        """
+    def submit(self) -> Order:
 
         return self._change_status(
             OrderStatus.SUBMITTED,
@@ -166,12 +256,7 @@ class Order:
 
 
 
-    def fill(
-        self,
-    ) -> Order:
-        """
-        Marca ordem como executada.
-        """
+    def fill(self) -> Order:
 
         return self._change_status(
             OrderStatus.FILLED,
@@ -179,12 +264,7 @@ class Order:
 
 
 
-    def partially_fill(
-        self,
-    ) -> Order:
-        """
-        Marca ordem como parcialmente executada.
-        """
+    def partially_fill(self) -> Order:
 
         return self._change_status(
             OrderStatus.PARTIALLY_FILLED,
@@ -192,12 +272,7 @@ class Order:
 
 
 
-    def cancel(
-        self,
-    ) -> Order:
-        """
-        Cancela ordem.
-        """
+    def cancel(self) -> Order:
 
         return self._change_status(
             OrderStatus.CANCELLED,
@@ -205,12 +280,7 @@ class Order:
 
 
 
-    def reject(
-        self,
-    ) -> Order:
-        """
-        Rejeita ordem.
-        """
+    def reject(self) -> Order:
 
         return self._change_status(
             OrderStatus.REJECTED,
