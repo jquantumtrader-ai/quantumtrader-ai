@@ -6,6 +6,7 @@ from decimal import Decimal
 from ...portfolio.assets.asset import Asset
 from ...value_objects.money import Money
 from ..enums.order_side import OrderSide
+from ..enums.order_type import OrderType
 from ..order_id import OrderId
 
 
@@ -20,6 +21,8 @@ class Order:
     asset: Asset
 
     side: OrderSide
+
+    order_type: OrderType
 
     quantity: Decimal
 
@@ -59,7 +62,8 @@ class Order:
 
         return (
             self.side
-            == OrderSide.BUY
+            ==
+            OrderSide.BUY
         )
 
 
@@ -70,5 +74,6 @@ class Order:
 
         return (
             self.side
-            == OrderSide.SELL
+            ==
+            OrderSide.SELL
         )
