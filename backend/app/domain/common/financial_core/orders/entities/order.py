@@ -5,17 +5,23 @@ from decimal import Decimal
 
 from ...portfolio.assets.asset import Asset
 from ...value_objects.money import Money
-from ..enums.order_side import OrderSide
-from ..enums.order_status import OrderStatus
-from ..enums.order_type import OrderType
+from ..enums import (
+    OrderSide,
+    OrderStatus,
+    OrderType,
+)
 from ..order_id import OrderId
+from ..state import OrderStateTransition
+
 
 
 @dataclass(frozen=True)
 class Order:
     """
-    Representa uma ordem financeira.
+    Representa uma ordem financeira
+    dentro do domínio.
     """
+
 
     order_id: OrderId
 
@@ -32,14 +38,17 @@ class Order:
     price: Money
 
 
+
     def __post_init__(
         self,
     ) -> None:
 
         if self.quantity <= Decimal("0"):
+
             raise ValueError(
                 "Quantidade deve ser maior que zero."
             )
+
 
 
     @property
@@ -55,6 +64,7 @@ class Order:
         )
 
 
+
     @property
     def is_buy(
         self,
@@ -65,6 +75,7 @@ class Order:
             ==
             OrderSide.BUY
         )
+
 
 
     @property
@@ -79,6 +90,7 @@ class Order:
         )
 
 
+
     @property
     def is_filled(
         self,
@@ -89,6 +101,7 @@ class Order:
             ==
             OrderStatus.FILLED
         )
+
 
 
     @property
@@ -103,6 +116,7 @@ class Order:
         )
 
 
+
     @property
     def is_rejected(
         self,
@@ -112,4 +126,92 @@ class Order:
             self.status
             ==
             OrderStatus.REJECTED
+        )
+
+
+
+    def _change_status(
+        self,
+        new_status: OrderStatus,
+    ) -> Order:
+
+        OrderStateTransition.validate(
+            self.status,
+            new_status,
+        )
+
+
+        return Order(
+            order_id=self.order_id,
+            asset=self.asset,
+            side=self.side,
+            order_type=self.order_type,
+            status=new_status,
+            quantity=self.quantity,
+            price=self.price,
+        )
+
+
+
+    def submit(
+        self,
+    ) -> Order:
+        """
+        Envia ordem para execução.
+        """
+
+        return self._change_status(
+            OrderStatus.SUBMITTED,
+        )
+
+
+
+    def fill(
+        self,
+    ) -> Order:
+        """
+        Marca ordem como executada.
+        """
+
+        return self._change_status(
+            OrderStatus.FILLED,
+        )
+
+
+
+    def partially_fill(
+        self,
+    ) -> Order:
+        """
+        Marca ordem como parcialmente executada.
+        """
+
+        return self._change_status(
+            OrderStatus.PARTIALLY_FILLED,
+        )
+
+
+
+    def cancel(
+        self,
+    ) -> Order:
+        """
+        Cancela ordem.
+        """
+
+        return self._change_status(
+            OrderStatus.CANCELLED,
+        )
+
+
+
+    def reject(
+        self,
+    ) -> Order:
+        """
+        Rejeita ordem.
+        """
+
+        return self._change_status(
+            OrderStatus.REJECTED,
         )
