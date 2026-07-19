@@ -14,6 +14,14 @@ from app.domain.common.financial_core.execution.enums import (
     ExecutionStatus,
 )
 
+from app.domain.common.financial_core.execution.event_store import (
+    InMemoryEventStore,
+)
+
+from app.domain.common.financial_core.execution.publishers import (
+    ExecutionEventPublisher,
+)
+
 from app.domain.common.financial_core.execution.unit_of_work import (
     ExecutionUnitOfWork,
 )
@@ -22,17 +30,45 @@ from app.domain.common.financial_core.execution.unit_of_work import (
 
 def create_service() -> ExecutionApplicationService:
     """
-    Cria Application Service com Unit Of Work.
+    Cria Application Service completo.
+
+    Stack:
+
+    ApplicationService
+            |
+            ▼
+    UnitOfWork
+            |
+            ▼
+    Repository
+
+    +
+
+    EventPublisher
+            |
+            ▼
+    EventStore
     """
 
     repository = InMemoryExecutionRepository()
+
 
     unit_of_work = ExecutionUnitOfWork(
         repository,
     )
 
+
+    event_store = InMemoryEventStore()
+
+
+    publisher = ExecutionEventPublisher(
+        event_store,
+    )
+
+
     return ExecutionApplicationService(
         unit_of_work,
+        publisher,
     )
 
 
@@ -47,22 +83,12 @@ def test_create_execution():
     )
 
 
-    assert (
-        service.get_status(execution_id)
-        ==
-        ExecutionStatus.CREATED
-    )
-
-
-    events = service.collect_events(
+    status = service.get_status(
         execution_id,
     )
 
 
-    assert isinstance(
-        events,
-        list,
-    )
+    assert status == ExecutionStatus.CREATED
 
 
 
@@ -82,11 +108,12 @@ def test_add_fill():
     )
 
 
-    assert (
-        service.get_status(execution_id)
-        ==
-        ExecutionStatus.FILLED
+    status = service.get_status(
+        execution_id,
     )
+
+
+    assert status == ExecutionStatus.FILLED
 
 
 
@@ -106,11 +133,12 @@ def test_partial_fill():
     )
 
 
-    assert (
-        service.get_status(execution_id)
-        ==
-        ExecutionStatus.PARTIAL
+    status = service.get_status(
+        execution_id,
     )
+
+
+    assert status == ExecutionStatus.PARTIAL
 
 
 
@@ -130,11 +158,12 @@ def test_cancel_execution():
     )
 
 
-    assert (
-        service.get_status(execution_id)
-        ==
-        ExecutionStatus.CANCELLED
+    status = service.get_status(
+        execution_id,
     )
+
+
+    assert status == ExecutionStatus.CANCELLED
 
 
 

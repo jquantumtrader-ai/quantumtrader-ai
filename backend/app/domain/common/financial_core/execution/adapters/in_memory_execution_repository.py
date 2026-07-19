@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from uuid import UUID
 
 from ..aggregates import ExecutionAggregate
+
 
 
 class InMemoryExecutionRepository:
@@ -13,12 +15,40 @@ class InMemoryExecutionRepository:
     Implementa o contrato ExecutionRepository.
     """
 
+
     def __init__(self) -> None:
 
         self._storage: dict[
             UUID,
             ExecutionAggregate,
         ] = {}
+
+
+
+    def create(
+        self,
+        execution_id: UUID,
+        quantity: Decimal,
+    ) -> ExecutionAggregate:
+        """
+        Cria uma nova execução
+        e registra no repositório.
+        """
+
+
+        execution = ExecutionAggregate(
+            execution_id=execution_id,
+            quantity=quantity,
+        )
+
+
+        self.save(
+            execution,
+        )
+
+
+        return execution
+
 
 
     def save(
@@ -28,6 +58,7 @@ class InMemoryExecutionRepository:
         """
         Salva ou atualiza uma execução.
         """
+
 
         self._storage[
             execution.execution_id
@@ -43,11 +74,13 @@ class InMemoryExecutionRepository:
         Recupera uma execução.
         """
 
+
         try:
 
             return self._storage[
                 execution_id
             ]
+
 
         except KeyError as exc:
 
@@ -65,6 +98,7 @@ class InMemoryExecutionRepository:
         Verifica se existe.
         """
 
+
         return (
             execution_id
             in
@@ -81,11 +115,13 @@ class InMemoryExecutionRepository:
         Remove uma execução.
         """
 
+
         try:
 
             del self._storage[
                 execution_id
             ]
+
 
         except KeyError as exc:
 
@@ -95,9 +131,12 @@ class InMemoryExecutionRepository:
 
 
 
-    def clear(self) -> None:
+    def clear(
+        self,
+    ) -> None:
         """
         Limpa armazenamento.
         """
+
 
         self._storage.clear()

@@ -5,8 +5,8 @@ from uuid import UUID, uuid4
 
 from ..enums import ExecutionStatus
 from ..events import ExecutionEvent
+from ..publishers import ExecutionEventPublisher
 from ..unit_of_work import ExecutionUnitOfWork
-from ..aggregates import ExecutionAggregate
 
 
 class ExecutionApplicationService:
@@ -15,12 +15,33 @@ class ExecutionApplicationService:
     casos de uso de execução.
     """
 
+
     def __init__(
         self,
         unit_of_work: ExecutionUnitOfWork,
+        event_publisher: ExecutionEventPublisher,
     ) -> None:
 
         self._unit_of_work = unit_of_work
+
+        self._event_publisher = event_publisher
+
+
+
+    def _publish_events(
+        self,
+        execution,
+    ) -> None:
+        """
+        Publica eventos pendentes do aggregate.
+        """
+
+        events = execution.pull_events()
+
+
+        self._event_publisher.publish(
+            events,
+        )
 
 
 
@@ -28,9 +49,6 @@ class ExecutionApplicationService:
         self,
         quantity: Decimal,
     ) -> UUID:
-        """
-        Cria uma execução.
-        """
 
         self._unit_of_work.begin()
 
@@ -38,13 +56,19 @@ class ExecutionApplicationService:
 
             execution_id = uuid4()
 
-            execution = ExecutionAggregate(
-                execution_id=execution_id,
-                quantity=quantity,
+
+            execution = self._unit_of_work.repository.create(
+                execution_id,
+                quantity,
             )
 
 
             self._unit_of_work.repository.save(
+                execution,
+            )
+
+
+            self._publish_events(
                 execution,
             )
 
@@ -68,9 +92,6 @@ class ExecutionApplicationService:
         execution_id: UUID,
         quantity: Decimal,
     ) -> None:
-        """
-        Adiciona preenchimento.
-        """
 
         self._unit_of_work.begin()
 
@@ -93,6 +114,11 @@ class ExecutionApplicationService:
             )
 
 
+            self._publish_events(
+                execution,
+            )
+
+
             self._unit_of_work.commit()
 
 
@@ -109,9 +135,6 @@ class ExecutionApplicationService:
         execution_id: UUID,
         reason: str,
     ) -> None:
-        """
-        Cancela execução.
-        """
 
         self._unit_of_work.begin()
 
@@ -134,6 +157,11 @@ class ExecutionApplicationService:
             )
 
 
+            self._publish_events(
+                execution,
+            )
+
+
             self._unit_of_work.commit()
 
 
@@ -149,9 +177,6 @@ class ExecutionApplicationService:
         self,
         execution_id: UUID,
     ) -> ExecutionStatus:
-        """
-        Retorna status.
-        """
 
         execution = (
             self._unit_of_work.repository.get(
@@ -168,9 +193,6 @@ class ExecutionApplicationService:
         self,
         execution_id: UUID,
     ) -> list[ExecutionEvent]:
-        """
-        Coleta eventos.
-        """
 
         execution = (
             self._unit_of_work.repository.get(

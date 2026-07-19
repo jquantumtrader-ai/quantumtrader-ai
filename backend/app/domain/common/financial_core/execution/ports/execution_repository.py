@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Protocol
 from uuid import UUID
 
@@ -13,6 +14,18 @@ class ExecutionRepository(Protocol):
     """
 
 
+    def create(
+        self,
+        execution_id: UUID,
+        quantity: Decimal,
+    ) -> ExecutionAggregate:
+        """
+        Cria uma nova execução.
+        """
+        ...
+
+
+
     def save(
         self,
         execution: ExecutionAggregate,
@@ -21,6 +34,7 @@ class ExecutionRepository(Protocol):
         Persiste uma execução.
         """
         ...
+
 
 
     def get(
@@ -33,6 +47,7 @@ class ExecutionRepository(Protocol):
         ...
 
 
+
     def exists(
         self,
         execution_id: UUID,
@@ -41,6 +56,7 @@ class ExecutionRepository(Protocol):
         Verifica existência.
         """
         ...
+
 
 
     def remove(
