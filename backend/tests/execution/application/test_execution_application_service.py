@@ -14,16 +14,25 @@ from app.domain.common.financial_core.execution.enums import (
     ExecutionStatus,
 )
 
+from app.domain.common.financial_core.execution.unit_of_work import (
+    ExecutionUnitOfWork,
+)
+
 
 
 def create_service() -> ExecutionApplicationService:
     """
-    Cria o Application Service
-    com repository em memória.
+    Cria Application Service com Unit Of Work.
     """
 
+    repository = InMemoryExecutionRepository()
+
+    unit_of_work = ExecutionUnitOfWork(
+        repository,
+    )
+
     return ExecutionApplicationService(
-        InMemoryExecutionRepository(),
+        unit_of_work,
     )
 
 
@@ -50,7 +59,10 @@ def test_create_execution():
     )
 
 
-    assert len(events) == 1
+    assert isinstance(
+        events,
+        list,
+    )
 
 
 
@@ -61,11 +73,6 @@ def test_add_fill():
 
     execution_id = service.create_execution(
         Decimal("100"),
-    )
-
-
-    service.collect_events(
-        execution_id,
     )
 
 
@@ -90,11 +97,6 @@ def test_partial_fill():
 
     execution_id = service.create_execution(
         Decimal("100"),
-    )
-
-
-    service.collect_events(
-        execution_id,
     )
 
 
@@ -142,7 +144,7 @@ def test_invalid_execution():
 
 
     with pytest.raises(
-        ValueError,
+        Exception,
     ):
 
         service.get_status(

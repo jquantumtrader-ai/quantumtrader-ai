@@ -3,24 +3,25 @@ from __future__ import annotations
 from decimal import Decimal
 from uuid import UUID, uuid4
 
-from ..aggregates import ExecutionAggregate
 from ..enums import ExecutionStatus
 from ..events import ExecutionEvent
-from ..ports import ExecutionRepository
+from ..unit_of_work import ExecutionUnitOfWork
+from ..aggregates import ExecutionAggregate
 
 
 class ExecutionApplicationService:
     """
-    Serviço de aplicação responsável por
-    coordenar casos de uso de execução.
+    Serviço de aplicação responsável pelos
+    casos de uso de execução.
     """
 
     def __init__(
         self,
-        repository: ExecutionRepository,
+        unit_of_work: ExecutionUnitOfWork,
     ) -> None:
 
-        self._repository = repository
+        self._unit_of_work = unit_of_work
+
 
 
     def create_execution(
@@ -31,18 +32,34 @@ class ExecutionApplicationService:
         Cria uma execução.
         """
 
-        execution_id = uuid4()
+        self._unit_of_work.begin()
 
-        execution = ExecutionAggregate(
-            execution_id=execution_id,
-            quantity=quantity,
-        )
+        try:
 
-        self._repository.save(
-            execution,
-        )
+            execution_id = uuid4()
 
-        return execution_id
+            execution = ExecutionAggregate(
+                execution_id=execution_id,
+                quantity=quantity,
+            )
+
+
+            self._unit_of_work.repository.save(
+                execution,
+            )
+
+
+            self._unit_of_work.commit()
+
+
+            return execution_id
+
+
+        except Exception:
+
+            self._unit_of_work.rollback()
+
+            raise
 
 
 
@@ -55,19 +72,35 @@ class ExecutionApplicationService:
         Adiciona preenchimento.
         """
 
-        execution = self._repository.get(
-            execution_id,
-        )
+        self._unit_of_work.begin()
+
+        try:
+
+            execution = (
+                self._unit_of_work.repository.get(
+                    execution_id,
+                )
+            )
 
 
-        execution.add_fill(
-            quantity,
-        )
+            execution.add_fill(
+                quantity,
+            )
 
 
-        self._repository.save(
-            execution,
-        )
+            self._unit_of_work.repository.save(
+                execution,
+            )
+
+
+            self._unit_of_work.commit()
+
+
+        except Exception:
+
+            self._unit_of_work.rollback()
+
+            raise
 
 
 
@@ -80,19 +113,35 @@ class ExecutionApplicationService:
         Cancela execução.
         """
 
-        execution = self._repository.get(
-            execution_id,
-        )
+        self._unit_of_work.begin()
+
+        try:
+
+            execution = (
+                self._unit_of_work.repository.get(
+                    execution_id,
+                )
+            )
 
 
-        execution.cancel(
-            reason,
-        )
+            execution.cancel(
+                reason,
+            )
 
 
-        self._repository.save(
-            execution,
-        )
+            self._unit_of_work.repository.save(
+                execution,
+            )
+
+
+            self._unit_of_work.commit()
+
+
+        except Exception:
+
+            self._unit_of_work.rollback()
+
+            raise
 
 
 
@@ -104,9 +153,12 @@ class ExecutionApplicationService:
         Retorna status.
         """
 
-        execution = self._repository.get(
-            execution_id,
+        execution = (
+            self._unit_of_work.repository.get(
+                execution_id,
+            )
         )
+
 
         return execution.status
 
@@ -120,8 +172,11 @@ class ExecutionApplicationService:
         Coleta eventos.
         """
 
-        execution = self._repository.get(
-            execution_id,
+        execution = (
+            self._unit_of_work.repository.get(
+                execution_id,
+            )
         )
+
 
         return execution.pull_events()
