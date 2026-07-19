@@ -1,13 +1,7 @@
-from .order_domain_service import (
-    OrderDomainService,
-)
-
-from .order_service import (
-    OrderService,
-)
-
+from .order_service import OrderService
+from .order_domain_service import OrderDomainService
 
 __all__ = [
-    "OrderDomainService",
     "OrderService",
+    "OrderDomainService",
 ]
