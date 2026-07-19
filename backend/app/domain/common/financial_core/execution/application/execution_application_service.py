@@ -6,20 +6,21 @@ from uuid import UUID, uuid4
 from ..aggregates import ExecutionAggregate
 from ..enums import ExecutionStatus
 from ..events import ExecutionEvent
+from ..ports import ExecutionRepository
 
 
 class ExecutionApplicationService:
     """
     Serviço de aplicação responsável por
-    orquestrar operações de execução.
+    coordenar casos de uso de execução.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        repository: ExecutionRepository,
+    ) -> None:
 
-        self._executions: dict[
-            UUID,
-            ExecutionAggregate,
-        ] = {}
+        self._repository = repository
 
 
     def create_execution(
@@ -27,20 +28,19 @@ class ExecutionApplicationService:
         quantity: Decimal,
     ) -> UUID:
         """
-        Cria uma nova execução.
+        Cria uma execução.
         """
 
         execution_id = uuid4()
 
-        aggregate = ExecutionAggregate(
+        execution = ExecutionAggregate(
             execution_id=execution_id,
             quantity=quantity,
         )
 
-        self._executions[
-            execution_id
-        ] = aggregate
-
+        self._repository.save(
+            execution,
+        )
 
         return execution_id
 
@@ -52,16 +52,21 @@ class ExecutionApplicationService:
         quantity: Decimal,
     ) -> None:
         """
-        Adiciona preenchimento
-        à execução.
+        Adiciona preenchimento.
         """
 
-        execution = self._get_execution(
+        execution = self._repository.get(
             execution_id,
         )
 
+
         execution.add_fill(
             quantity,
+        )
+
+
+        self._repository.save(
+            execution,
         )
 
 
@@ -72,15 +77,21 @@ class ExecutionApplicationService:
         reason: str,
     ) -> None:
         """
-        Cancela uma execução.
+        Cancela execução.
         """
 
-        execution = self._get_execution(
+        execution = self._repository.get(
             execution_id,
         )
 
+
         execution.cancel(
             reason,
+        )
+
+
+        self._repository.save(
+            execution,
         )
 
 
@@ -90,10 +101,10 @@ class ExecutionApplicationService:
         execution_id: UUID,
     ) -> ExecutionStatus:
         """
-        Retorna status atual.
+        Retorna status.
         """
 
-        execution = self._get_execution(
+        execution = self._repository.get(
             execution_id,
         )
 
@@ -106,30 +117,11 @@ class ExecutionApplicationService:
         execution_id: UUID,
     ) -> list[ExecutionEvent]:
         """
-        Retorna eventos gerados.
+        Coleta eventos.
         """
 
-        execution = self._get_execution(
+        execution = self._repository.get(
             execution_id,
         )
 
         return execution.pull_events()
-
-
-
-    def _get_execution(
-        self,
-        execution_id: UUID,
-    ) -> ExecutionAggregate:
-
-        try:
-
-            return self._executions[
-                execution_id
-            ]
-
-        except KeyError as exc:
-
-            raise ValueError(
-                "Execution not found"
-            ) from exc
