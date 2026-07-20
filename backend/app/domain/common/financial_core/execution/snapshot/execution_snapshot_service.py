@@ -16,18 +16,12 @@ class ExecutionSnapshotService:
         self,
         aggregate: ExecutionAggregate,
     ) -> ExecutionSnapshot:
-        """
-        Cria um snapshot do Aggregate.
-        """
 
         return ExecutionSnapshot(
             execution_id=aggregate.execution_id,
             quantity=aggregate.quantity,
             filled_quantity=aggregate.filled_quantity,
-            cancelled=(
-                aggregate.status
-                == ExecutionStatus.CANCELLED
-            ),
+            status=aggregate.status,
             created_at=datetime.utcnow(),
         )
 
@@ -35,9 +29,6 @@ class ExecutionSnapshotService:
         self,
         snapshot: ExecutionSnapshot,
     ) -> ExecutionAggregate:
-        """
-        Reconstrói um Aggregate a partir de um Snapshot.
-        """
 
         aggregate = ExecutionAggregate(
             execution_id=snapshot.execution_id,
@@ -54,7 +45,7 @@ class ExecutionSnapshotService:
 
             aggregate.pull_events()
 
-        if snapshot.cancelled:
+        if snapshot.status == ExecutionStatus.CANCELLED:
 
             aggregate.cancel(
                 "snapshot restore",

@@ -38,7 +38,7 @@ def test_create_snapshot() -> None:
     assert snapshot.execution_id == aggregate.execution_id
     assert snapshot.quantity == Decimal("100")
     assert snapshot.filled_quantity == Decimal("25")
-    assert snapshot.cancelled is False
+    assert snapshot.status == ExecutionStatus.PARTIAL
 
 
 def test_restore_snapshot() -> None:

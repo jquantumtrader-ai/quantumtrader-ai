@@ -5,18 +5,21 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
+from ..enums import ExecutionStatus
+
 
 @dataclass(frozen=True, slots=True)
 class ExecutionSnapshot:
     """
-    Snapshot imutável do estado de uma Execution.
-
-    Permite reconstruir rapidamente um Aggregate sem
-    reproduzir todo o histórico de eventos.
+    Snapshot imutável do estado da execução.
     """
 
     execution_id: UUID
+
     quantity: Decimal
+
     filled_quantity: Decimal
-    cancelled: bool
+
+    status: ExecutionStatus
+
     created_at: datetime
