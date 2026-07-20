@@ -39,15 +39,14 @@ class ExecutionAggregate:
         init=False,
     )
 
-
     def __post_init__(self) -> None:
 
         self._events.append(
             ExecutionCreatedEvent(
-                self.execution_id,
+                execution_id=self.execution_id,
+                quantity=self.quantity,
             )
         )
-
 
     def change_status(
         self,
@@ -61,7 +60,6 @@ class ExecutionAggregate:
 
         self.status = new_status
 
-
     def activate(self) -> None:
         """
         Move execução para processamento.
@@ -73,7 +71,6 @@ class ExecutionAggregate:
                 ExecutionStatus.PENDING,
             )
 
-
     def add_fill(
         self,
         quantity: Decimal,
@@ -82,13 +79,11 @@ class ExecutionAggregate:
         if self.status == ExecutionStatus.CREATED:
             self.activate()
 
-
         new_quantity = (
             self.filled_quantity
             +
             quantity
         )
-
 
         if new_quantity > self.quantity:
 
@@ -96,9 +91,7 @@ class ExecutionAggregate:
                 "Fill exceeds execution quantity"
             )
 
-
         self.filled_quantity = new_quantity
-
 
         if (
             self.filled_quantity
@@ -123,7 +116,6 @@ class ExecutionAggregate:
                 ExecutionStatus.PARTIAL,
             )
 
-
     def cancel(
         self,
         reason: str,
@@ -132,11 +124,9 @@ class ExecutionAggregate:
         if self.status == ExecutionStatus.CREATED:
             self.activate()
 
-
         self.change_status(
             ExecutionStatus.CANCELLED,
         )
-
 
         self._events.append(
             ExecutionCancelledEvent(
@@ -144,7 +134,6 @@ class ExecutionAggregate:
                 reason=reason,
             )
         )
-
 
     def pull_events(
         self,

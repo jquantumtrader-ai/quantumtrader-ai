@@ -4,13 +4,11 @@ from ..event_store import EventStore
 from ..events import ExecutionEvent
 
 
-
 class ExecutionEventPublisher:
     """
     Publicador responsável por enviar
     eventos de domínio para o Event Store.
     """
-
 
     def __init__(
         self,
@@ -19,16 +17,19 @@ class ExecutionEventPublisher:
 
         self._event_store = event_store
 
-
-
     def publish(
         self,
-        events: list[ExecutionEvent],
+        events: ExecutionEvent | list[ExecutionEvent],
     ) -> None:
         """
-        Publica uma lista de eventos.
+        Publica um ou vários eventos.
         """
 
+        if isinstance(
+            events,
+            ExecutionEvent,
+        ):
+            events = [events]
 
         for event in events:
 

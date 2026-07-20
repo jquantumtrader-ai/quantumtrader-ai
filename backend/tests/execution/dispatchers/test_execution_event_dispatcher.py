@@ -1,3 +1,4 @@
+from decimal import Decimal
 from uuid import uuid4
 
 from app.domain.common.financial_core.execution.dispatchers import (
@@ -9,44 +10,30 @@ from app.domain.common.financial_core.execution.events import (
 )
 
 
-
 def test_register_and_dispatch_event():
 
     dispatcher = ExecutionEventDispatcher()
 
     received = []
 
-
     def handler(event):
 
-        received.append(
-            event,
-        )
-
+        received.append(event)
 
     dispatcher.register(
         "EXECUTION_CREATED",
         handler,
     )
 
-
     event = ExecutionCreatedEvent(
         uuid4(),
+        Decimal("100"),
     )
 
+    dispatcher.dispatch(event)
 
-    dispatcher.dispatch(
-        event,
-    )
-
-
-    assert len(
-        received,
-    ) == 1
-
-
+    assert len(received) == 1
     assert received[0] == event
-
 
 
 def test_multiple_handlers():
@@ -57,16 +44,13 @@ def test_multiple_handlers():
         "value": 0,
     }
 
-
     def handler_one(event):
 
         counter["value"] += 1
 
-
     def handler_two(event):
 
         counter["value"] += 1
-
 
     dispatcher.register(
         "EXECUTION_CREATED",
@@ -78,16 +62,14 @@ def test_multiple_handlers():
         handler_two,
     )
 
-
     dispatcher.dispatch(
         ExecutionCreatedEvent(
             uuid4(),
+            Decimal("100"),
         ),
     )
 
-
     assert counter["value"] == 2
-
 
 
 def test_clear_handlers():
@@ -96,21 +78,18 @@ def test_clear_handlers():
 
     called = []
 
-
     dispatcher.register(
         "EXECUTION_CREATED",
         lambda event: called.append(event),
     )
 
-
     dispatcher.clear()
-
 
     dispatcher.dispatch(
         ExecutionCreatedEvent(
             uuid4(),
+            Decimal("100"),
         ),
     )
-
 
     assert called == []

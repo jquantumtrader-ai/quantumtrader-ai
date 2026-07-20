@@ -4,9 +4,7 @@ from collections import defaultdict
 from uuid import UUID
 
 from ..events import ExecutionEvent
-
 from .event_store import EventStore
-
 
 
 class InMemoryEventStore(EventStore):
@@ -14,7 +12,6 @@ class InMemoryEventStore(EventStore):
     Implementação em memória
     do Event Store.
     """
-
 
     def __init__(
         self,
@@ -24,8 +21,6 @@ class InMemoryEventStore(EventStore):
             UUID,
             list[ExecutionEvent],
         ] = defaultdict(list)
-
-
 
     def append(
         self,
@@ -41,8 +36,6 @@ class InMemoryEventStore(EventStore):
             event,
         )
 
-
-
     def get_events(
         self,
         execution_id: UUID,
@@ -56,4 +49,16 @@ class InMemoryEventStore(EventStore):
                 execution_id,
                 [],
             )
+        )
+
+    def load(
+        self,
+        execution_id: UUID,
+    ) -> list[ExecutionEvent]:
+        """
+        Alias compatível com versões anteriores.
+        """
+
+        return self.get_events(
+            execution_id,
         )
