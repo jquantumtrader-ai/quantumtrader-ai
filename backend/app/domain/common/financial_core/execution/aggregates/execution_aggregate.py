@@ -5,14 +5,12 @@ from decimal import Decimal
 from uuid import UUID
 
 from ..enums import ExecutionStatus
-
 from ..events import (
     ExecutionEvent,
     ExecutionCreatedEvent,
     ExecutionFilledEvent,
     ExecutionCancelledEvent,
 )
-
 from ..state import ExecutionStateTransition
 
 
@@ -26,13 +24,11 @@ class ExecutionAggregate:
 
     quantity: Decimal
 
-    status: ExecutionStatus = (
-        ExecutionStatus.CREATED
-    )
+    status: ExecutionStatus = ExecutionStatus.CREATED
 
-    filled_quantity: Decimal = (
-        Decimal("0")
-    )
+    filled_quantity: Decimal = Decimal("0")
+
+    version: int = 0
 
     _events: list[ExecutionEvent] = field(
         default_factory=list,
@@ -48,6 +44,8 @@ class ExecutionAggregate:
             )
         )
 
+        self.version = 1
+
     def change_status(
         self,
         new_status: ExecutionStatus,
@@ -61,9 +59,6 @@ class ExecutionAggregate:
         self.status = new_status
 
     def activate(self) -> None:
-        """
-        Move execução para processamento.
-        """
 
         if self.status == ExecutionStatus.CREATED:
 
@@ -81,8 +76,7 @@ class ExecutionAggregate:
 
         new_quantity = (
             self.filled_quantity
-            +
-            quantity
+            + quantity
         )
 
         if new_quantity > self.quantity:
@@ -93,11 +87,7 @@ class ExecutionAggregate:
 
         self.filled_quantity = new_quantity
 
-        if (
-            self.filled_quantity
-            ==
-            self.quantity
-        ):
+        if self.filled_quantity == self.quantity:
 
             self.change_status(
                 ExecutionStatus.FILLED,
@@ -115,6 +105,8 @@ class ExecutionAggregate:
             self.change_status(
                 ExecutionStatus.PARTIAL,
             )
+
+        self.version += 1
 
     def cancel(
         self,
@@ -134,6 +126,8 @@ class ExecutionAggregate:
                 reason=reason,
             )
         )
+
+        self.version += 1
 
     def pull_events(
         self,
