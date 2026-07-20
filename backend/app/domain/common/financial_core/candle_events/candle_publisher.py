@@ -7,17 +7,13 @@ from ..candles import Candle
 
 
 class CandlePublisher(ABC):
-    """
-    Contrato para publicação de candles.
-    """
-
     @abstractmethod
     def publish(self, candle: Candle) -> None:
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def subscribe(
         self,
-        callback: Callable[[Candle], None],
+        subscriber: Callable[[Candle], None],
     ) -> None:
-        ...
+        raise NotImplementedError
