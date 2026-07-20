@@ -13,7 +13,7 @@ def test_version_increments() -> None:
         quantity=Decimal("100"),
     )
 
-    assert aggregate.version == 1
+    assert int(aggregate.version) == 1
 
     aggregate.pull_events()
 
@@ -21,10 +21,10 @@ def test_version_increments() -> None:
         Decimal("20"),
     )
 
-    assert aggregate.version == 2
+    assert int(aggregate.version) == 2
 
     aggregate.cancel(
         "user",
     )
 
-    assert aggregate.version == 3
+    assert int(aggregate.version) == 3

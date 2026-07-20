@@ -6,12 +6,13 @@ from uuid import UUID
 
 from ..enums import ExecutionStatus
 from ..events import (
-    ExecutionEvent,
-    ExecutionCreatedEvent,
-    ExecutionFilledEvent,
     ExecutionCancelledEvent,
+    ExecutionCreatedEvent,
+    ExecutionEvent,
+    ExecutionFilledEvent,
 )
 from ..state import ExecutionStateTransition
+from ..value_objects import AggregateVersion
 
 
 @dataclass
@@ -28,7 +29,9 @@ class ExecutionAggregate:
 
     filled_quantity: Decimal = Decimal("0")
 
-    version: int = 0
+    version: AggregateVersion = field(
+        default_factory=AggregateVersion.initial,
+    )
 
     _events: list[ExecutionEvent] = field(
         default_factory=list,
@@ -44,7 +47,7 @@ class ExecutionAggregate:
             )
         )
 
-        self.version = 1
+        self.version = self.version.next()
 
     def change_status(
         self,
@@ -106,7 +109,7 @@ class ExecutionAggregate:
                 ExecutionStatus.PARTIAL,
             )
 
-        self.version += 1
+        self.version = self.version.next()
 
     def cancel(
         self,
@@ -127,7 +130,7 @@ class ExecutionAggregate:
             )
         )
 
-        self.version += 1
+        self.version = self.version.next()
 
     def pull_events(
         self,

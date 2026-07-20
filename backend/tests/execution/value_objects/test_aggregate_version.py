@@ -5,6 +5,13 @@ from app.domain.common.financial_core.execution.value_objects import (
 )
 
 
+def test_initial_version() -> None:
+
+    version = AggregateVersion.initial()
+
+    assert int(version) == 0
+
+
 def test_default_version() -> None:
 
     version = AggregateVersion()

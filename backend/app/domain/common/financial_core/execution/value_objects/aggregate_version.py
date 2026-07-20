@@ -22,9 +22,23 @@ class AggregateVersion:
                 "Aggregate version cannot be negative."
             )
 
+    @classmethod
+    def initial(
+        cls,
+    ) -> "AggregateVersion":
+        """
+        Retorna a versão inicial
+        de um Aggregate.
+        """
+
+        return cls(0)
+
     def next(
         self,
     ) -> "AggregateVersion":
+        """
+        Retorna a próxima versão.
+        """
 
         return AggregateVersion(
             self.value + 1,
