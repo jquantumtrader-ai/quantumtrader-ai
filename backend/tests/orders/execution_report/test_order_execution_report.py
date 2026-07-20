@@ -4,9 +4,6 @@ from app.domain.common.financial_core.orders.execution_report import (
     OrderExecutionReport,
 )
 
-from app.domain.common.financial_core.orders.enums import (
-    OrderStatus,
-)
 
 from app.domain.common.financial_core.orders.fills import (
     Fill,
